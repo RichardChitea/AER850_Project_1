@@ -10,12 +10,17 @@ df = pd.read_csv("Project_1_Data.csv")
 # Histograms
 df.hist()
 
-#dfnp = df.to_numpy()
-
 #3d plot
 fig = plt.figure()
-ax = plt.axes(projection='3d')
-ax.scatter3D(df['X'],df['Y'],df['Z'])
+ax = fig.add_subplot(projection='3d')
+
+for grp_name, grp_idx in df.groupby('Step').groups.items():
+    x = df.iloc[grp_idx,0]
+    y = df.iloc[grp_idx,1]
+    z = df.iloc[grp_idx,2]
+    ax.scatter3D(x, y, z, label=grp_name)
+
+ax.legend(bbox_to_anchor=(1,0.5),loc='center left',frameon=False)
 plt.show()
 
 
