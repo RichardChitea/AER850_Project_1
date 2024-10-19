@@ -52,15 +52,6 @@ print(pearson_matrix["Step"].sort_values(ascending=False))
 print(f" ")
 
 
-#
-# a_columns = ['X',
-#              'Y',
-#              'Z']
-# b_columns = ['Step']
-
-# a = df[a_columns] 
-# b = df[b_columns]
-
 
 #Stratified Sampling
 df["Z_cat"] = pd.cut(df['Z'], bins = [0,2,4,6,np.inf], labels = [1,2,3,4])
@@ -198,7 +189,3 @@ dataset = pd.read_csv("dataset.csv")
 
 dataset_pred = pipe.predict(dataset)
 print(dataset_pred)
-
-
-
-
