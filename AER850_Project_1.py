@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
-from sklearn.svm import SVR
+from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV, RandomizedSearchCV
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import mean_absolute_error
 # from pandas.plotting import scatter_matrix
 import seaborn as sns
@@ -40,7 +42,9 @@ plt.show()
 
 #Using Pearson's r
 pearson_matrix = df.corr()
+print(f"Pearson's correlation: ")
 print(pearson_matrix["Step"].sort_values(ascending=False))
+print(f" ")
 
 
 #
@@ -86,27 +90,79 @@ corr2 = B_train.corr(A_train['Y'])
 print(corr2)
 corr3 = B_train.corr(A_train['Z'])
 print(corr3)
+print(f" ")
+
+
+
+#Logistic Regression
+logistic_reg = LogisticRegression(random_state=42, multi_class='ovr')
+param_grid_lg = {}  
+grid_search_lg = GridSearchCV(logistic_reg, param_grid_lg, cv=5, scoring='neg_mean_absolute_error', n_jobs=-1)
+grid_search_lg.fit(A_train, B_train)
+best_model_lg = grid_search_lg.best_estimator_
+print("Best Logistic Regression Model:", best_model_lg)
+
+#Training and testing error for Logistic Regression
+B_train_pred_lg = best_model_lg.predict(A_train)
+B_test_pred_lg = best_model_lg.predict(A_test)
+mae_train_lg = mean_absolute_error(B_train, B_train_pred_lg)
+mae_test_lg = mean_absolute_error(B_test, B_test_pred_lg)
+print(f"Logistic Regression - MAE (Train): {mae_train_lg}, MAE (Test): {mae_test_lg}")
+print(f" ")
 
 
 #Support vector machine (Linear, polynomial, rbf, and sigmoid)
-svr = SVR()
-param_grid_svr = {
+svc = SVC()
+param_grid_svc = {
     'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
     'C': [0.1, 1, 10, 100],
+    'degree': [0,1,2,3,4,5],
     'gamma': ['scale', 'auto']
 }
-grid_search_svr = GridSearchCV(svr, param_grid_svr, cv=5, scoring='neg_mean_absolute_error', n_jobs=-1)
-grid_search_svr.fit(A_train, B_train)
-best_model_svr = grid_search_svr.best_estimator_
-print("Best SVM Model:", best_model_svr)
+grid_search_svc = GridSearchCV(svc, param_grid_svc, cv=5, scoring='neg_mean_absolute_error', n_jobs=-1)
+grid_search_svc.fit(A_train, B_train)
+best_model_svc = grid_search_svc.best_estimator_
+print("Best SVM Model GS:", best_model_svc)
+random_search_svc = RandomizedSearchCV(svc, param_grid_svc, cv=5, scoring='neg_mean_absolute_error', n_jobs=-1)
+random_search_svc.fit(A_train, B_train)
+best_model_svc_rand = random_search_svc.best_estimator_
+print("Best SVM Model RS:", best_model_svc_rand)
+
+#Training and Testing error for SVM
+B_train_pred_svc = best_model_svc.predict(A_train)
+B_test_pred_svc = best_model_svc.predict(A_test)
+mae_train_svc = mean_absolute_error(B_train, B_train_pred_svc)
+mae_test_svc = mean_absolute_error(B_test, B_test_pred_svc)
+print(f"SVM - MAE (Train): {mae_train_svc}, MAE (Test): {mae_test_svc}")
+print(f" ")
 
 
-# Training and Testing error for SVM
-B_train_pred_svr = best_model_svr.predict(A_train)
-B_test_pred_svr = best_model_svr.predict(A_test)
-mae_train_svr = mean_absolute_error(B_train, B_train_pred_svr)
-mae_test_svr = mean_absolute_error(B_test, B_test_pred_svr)
-print(f"SVM - MAE (Train): {mae_train_svr}, MAE (Test): {mae_test_svr}")
+#Decision Tree
+decision_tree = DecisionTreeClassifier(random_state=42)
+param_grid_dt = {
+    'max_depth': [None, 10, 20, 30],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4]
+}
+grid_search_dt = GridSearchCV(decision_tree, param_grid_dt, cv=5, scoring='neg_mean_absolute_error', n_jobs=-1)
+grid_search_dt.fit(A_train, B_train)
+best_model_dt = grid_search_dt.best_estimator_
+print("Best Decision Tree Model:", best_model_dt)
+
+#Training and testing error for Decision Tree
+B_train_pred_dt = best_model_dt.predict(A_train)
+B_test_pred_dt = best_model_dt.predict(A_test)
+mae_train_dt = mean_absolute_error(B_train, B_train_pred_dt)
+mae_test_dt = mean_absolute_error(B_test, B_test_pred_dt)
+print(f"Decision Tree - MAE (Train): {mae_train_dt}, MAE (Test): {mae_test_dt}")
+print(f" ")
+
+
+
+
+
+
+
 
 
 
