@@ -6,8 +6,11 @@ from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.ensemble import StackingClassifier
+import joblib
 # from pandas.plotting import scatter_matrix
 import seaborn as sns
+
 
 #Reading csv into dataframe
 df = pd.read_csv("Project_1_Data.csv")
@@ -15,6 +18,7 @@ df = df.dropna()
 df = df.drop(513)
 df = df.reset_index(drop=True)
 #print(df.info())
+
 
 # Histograms
 df.hist()
@@ -35,6 +39,7 @@ ax.set_ylabel('Y')
 ax.set_zlabel('Z')
 plt.show()
 
+
 #Scatter Matrix Plot
 # attributes = ["X","Y","Z","Step"]
 # scatter_matrix(df[attributes])
@@ -48,13 +53,14 @@ print(f" ")
 
 
 #
-a_columns = ['X',
-             'Y',
-             'Z']
-b_columns = ['Step']
+# a_columns = ['X',
+#              'Y',
+#              'Z']
+# b_columns = ['Step']
 
-a = df[a_columns] 
-b = df[b_columns]
+# a = df[a_columns] 
+# b = df[b_columns]
+
 
 #Stratified Sampling
 df["Z_cat"] = pd.cut(df['Z'], bins = [0,2,4,6,np.inf], labels = [1,2,3,4])
@@ -93,18 +99,16 @@ print(corr3)
 print(f" ")
 
 
-
 #Logistic Regression
 logistic_reg = LogisticRegression(random_state=42, multi_class='ovr')
 param_grid_lg = {}  
-grid_search_lg = GridSearchCV(logistic_reg, param_grid_lg, cv=5, scoring='neg_mean_absolute_error', n_jobs=-1)
+grid_search_lg = GridSearchCV(logistic_reg, param_grid_lg, cv=5, scoring='f1_micro', n_jobs=-1)
 grid_search_lg.fit(A_train, B_train)
 best_model_lg = grid_search_lg.best_estimator_
 print("Best Logistic Regression Model:", best_model_lg)
 
 B_test_lg_gs = grid_search_lg.predict(A_test)
 print(classification_report(B_test, B_test_lg_gs))
-
 
 print(f" ")
 
@@ -117,11 +121,11 @@ param_grid_svc = {
     'degree': [0,1,2,3,4,5],
     'gamma': ['scale', 'auto']
 }
-grid_search_svc = GridSearchCV(svc, param_grid_svc, cv=5, scoring='neg_mean_absolute_error', n_jobs=-1)
+grid_search_svc = GridSearchCV(svc, param_grid_svc, cv=5, scoring='f1_micro', n_jobs=-1)
 grid_search_svc.fit(A_train, B_train)
 best_model_svc = grid_search_svc.best_estimator_
 print("Best SVM Model GS:", best_model_svc)
-random_search_svc = RandomizedSearchCV(svc, param_grid_svc, cv=5, scoring='neg_mean_absolute_error', n_jobs=-1)
+random_search_svc = RandomizedSearchCV(svc, param_grid_svc, cv=5, scoring='f1_micro', n_jobs=-1)
 random_search_svc.fit(A_train, B_train)
 best_model_svc_rand = random_search_svc.best_estimator_
 print("Best SVM Model RS:", best_model_svc_rand)
@@ -153,7 +157,7 @@ param_grid_dt = {
     'min_samples_split': [2, 5, 10],
     'min_samples_leaf': [1, 2, 4]
 }
-grid_search_dt = GridSearchCV(decision_tree, param_grid_dt, cv=5, scoring='neg_mean_absolute_error', n_jobs=-1)
+grid_search_dt = GridSearchCV(decision_tree, param_grid_dt, cv=5, scoring='f1_micro', n_jobs=-1)
 grid_search_dt.fit(A_train, B_train)
 best_model_dt = grid_search_dt.best_estimator_
 print("Best Decision Tree Model:", best_model_dt)
@@ -164,12 +168,36 @@ print(classification_report(B_test, B_test_dt_gs))
 print(f" ")
 
 
+#Stacked Classifier
+estimators = []
+estimators.append(('SVM', SVC()))
+estimators.append(('Decision Tree', DecisionTreeClassifier(random_state=42)))
+stack_class = StackingClassifier(estimators=estimators, final_estimator=logistic_reg, cv=5)
+stack_class.fit(A_train, B_train)
+
+B_test_stack_class = stack_class.predict(A_test)
+print(classification_report(B_test, B_test_stack_class))
+
+cnf_mat_stack_class = confusion_matrix(B_test, B_test_stack_class)
+class_names = [1,2,3,4,5,6,7,8,9,10,11,12,13]
+fig, ax = plt.subplots()
+tick_marks = np.arange(len(class_names))
+plt.xticks(tick_marks, class_names)
+plt.yticks(tick_marks, class_names)
+
+sns.heatmap(np.abs(cnf_mat_stack_class), annot = True, cmap = "PuBuGn", fmt = 'g')
+plt.ylabel('Test')
+plt.xlabel('Predicted')
 
 
+#joblib
+pipe = grid_search_svc
+joblib.dump(pipe, 'svm.joblib')
 
+dataset = pd.read_csv("dataset.csv")
 
-
-
+dataset_pred = pipe.predict(dataset)
+print(dataset_pred)
 
 
 
