@@ -5,7 +5,7 @@ from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV, Random
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import classification_report, confusion_matrix
 # from pandas.plotting import scatter_matrix
 import seaborn as sns
 
@@ -64,7 +64,7 @@ my_splitter = StratifiedShuffleSplit(n_splits=1,
                                      random_state=42)
 
 for train_index, test_index in my_splitter.split(df,df["Z_cat"]):
-    strat_df_train = df.loc[train_index].reset_index(drop=True) # set new indicies to be in order again
+    strat_df_train = df.loc[train_index].reset_index(drop=True) 
     strat_df_test = df.loc[test_index].reset_index(drop=True)
 
 strat_df_train = strat_df_train.drop(columns=["Z_cat"],axis=1)
@@ -102,16 +102,14 @@ grid_search_lg.fit(A_train, B_train)
 best_model_lg = grid_search_lg.best_estimator_
 print("Best Logistic Regression Model:", best_model_lg)
 
-#Training and testing error for Logistic Regression
-B_train_pred_lg = best_model_lg.predict(A_train)
-B_test_pred_lg = best_model_lg.predict(A_test)
-mae_train_lg = mean_absolute_error(B_train, B_train_pred_lg)
-mae_test_lg = mean_absolute_error(B_test, B_test_pred_lg)
-print(f"Logistic Regression - MAE (Train): {mae_train_lg}, MAE (Test): {mae_test_lg}")
+B_test_lg_gs = grid_search_lg.predict(A_test)
+print(classification_report(B_test, B_test_lg_gs))
+
+
 print(f" ")
 
 
-#Support vector machine (Linear, polynomial, rbf, and sigmoid)
+#Support vector machine
 svc = SVC()
 param_grid_svc = {
     'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
@@ -128,12 +126,23 @@ random_search_svc.fit(A_train, B_train)
 best_model_svc_rand = random_search_svc.best_estimator_
 print("Best SVM Model RS:", best_model_svc_rand)
 
-#Training and Testing error for SVM
-B_train_pred_svc = best_model_svc.predict(A_train)
-B_test_pred_svc = best_model_svc.predict(A_test)
-mae_train_svc = mean_absolute_error(B_train, B_train_pred_svc)
-mae_test_svc = mean_absolute_error(B_test, B_test_pred_svc)
-print(f"SVM - MAE (Train): {mae_train_svc}, MAE (Test): {mae_test_svc}")
+B_test_svc_gs = grid_search_svc.predict(A_test)
+print(classification_report(B_test, B_test_svc_gs))
+
+B_test_svc_rs = grid_search_svc.predict(A_test)
+print(classification_report(B_test, B_test_svc_rs))
+
+cnf_mat_svc_rs = confusion_matrix(B_test, B_test_svc_rs)
+class_names = [1,2,3,4,5,6,7,8,9,10,11,12,13]
+fig, ax = plt.subplots()
+tick_marks = np.arange(len(class_names))
+plt.xticks(tick_marks, class_names)
+plt.yticks(tick_marks, class_names)
+
+sns.heatmap(np.abs(cnf_mat_svc_rs), annot = True, cmap = "YlOrRd", fmt = 'g')
+plt.ylabel('Test')
+plt.xlabel('Predicted')
+
 print(f" ")
 
 
@@ -149,12 +158,9 @@ grid_search_dt.fit(A_train, B_train)
 best_model_dt = grid_search_dt.best_estimator_
 print("Best Decision Tree Model:", best_model_dt)
 
-#Training and testing error for Decision Tree
-B_train_pred_dt = best_model_dt.predict(A_train)
-B_test_pred_dt = best_model_dt.predict(A_test)
-mae_train_dt = mean_absolute_error(B_train, B_train_pred_dt)
-mae_test_dt = mean_absolute_error(B_test, B_test_pred_dt)
-print(f"Decision Tree - MAE (Train): {mae_train_dt}, MAE (Test): {mae_test_dt}")
+B_test_dt_gs = grid_search_dt.predict(A_test)
+print(classification_report(B_test, B_test_dt_gs))
+
 print(f" ")
 
 
