@@ -161,8 +161,8 @@ print(f" ")
 
 #Stacked Classifier
 estimators = []
-estimators.append(('SVM', SVC()))
-estimators.append(('Decision Tree', DecisionTreeClassifier(random_state=42)))
+estimators.append(('SVM', best_model_svc))
+estimators.append(('Decision Tree', best_model_dt))
 stack_class = StackingClassifier(estimators=estimators, final_estimator=logistic_reg, cv=5)
 stack_class.fit(A_train, B_train)
 
